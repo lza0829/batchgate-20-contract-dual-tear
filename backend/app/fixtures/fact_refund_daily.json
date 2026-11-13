@@ -1,0 +1,6 @@
+{
+  "watermark_ts": "2026-11-10T19:30:00Z",
+  "rows": [
+    {"biz_date": "2026-11-10", "refund_count": 2, "amount_sum": 45.0}
+  ]
+}
