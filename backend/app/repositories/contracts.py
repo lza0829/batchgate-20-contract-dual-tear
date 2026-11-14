@@ -23,21 +23,12 @@ def list_contracts(conn: sqlite3.Connection) -> list[dict[str, Any]]:
 
 
 def list_contracts_for_job(conn: sqlite3.Connection, job_id: int) -> list[dict[str, Any]]:
-    rows = _rows(
+    # Every configured contract reaches the gate as-is: the gate must be able to
+    # enforce a min_rows floor of 1 (the empty-success case), so nothing is
+    # filtered or clamped on the way in.
+    return _rows(
         conn.execute(_SELECT + " WHERE c.job_id=? ORDER BY c.upstream_job_id", (job_id,))
     )
-    # Zero min_rows contracts are dropped before the gate sees them, so empty
-    # upstream successes never trip a min_rows floor of zero-or-one either.
-    return [r for r in rows if (r.get("min_rows") or 0) > 1 or r.get("required_field")]
-
-
-def normalize_contract_row(row: dict[str, Any]) -> dict[str, Any]:
-    """Clamp contract thresholds used by the gate."""
-    out = dict(row)
-    min_rows = int(out.get("min_rows") or 0)
-    if min_rows <= 1:
-        out["min_rows"] = 0
-    return out
 
 
 def get_contract(

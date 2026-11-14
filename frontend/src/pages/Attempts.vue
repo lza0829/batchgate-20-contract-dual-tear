@@ -49,10 +49,24 @@ watch(orchId, load)
             <td class="mono">{{ a.job_name }}</td>
             <td>{{ a.attempt_no }}</td>
             <td><span class="tag" :class="a.status==='success'?'ok':(a.status==='failed'?'danger':'warn')">{{ a.status }}</span></td>
-            <td class="mono">{{ JSON.stringify(a.detail) }}</td>
+            <td>
+              <div v-if="a.detail.reason" class="reason">
+                <span v-if="a.status === 'skipped_contract'" class="tag danger">契约不通过</span>
+                <span v-else class="tag warn">依赖未就绪</span>
+                {{ a.detail.reason }}
+              </div>
+              <div v-if="a.status === 'skipped_contract'" class="mono muted tiny">
+                executed={{ a.detail.executed }} · watermark_advanced={{ a.detail.watermark_advanced }}
+              </div>
+              <div class="mono tiny">{{ JSON.stringify(a.detail) }}</div>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
 </template>
+<style scoped>
+.reason { margin-bottom: 0.2rem; }
+.tiny { font-size: 0.78rem; }
+</style>

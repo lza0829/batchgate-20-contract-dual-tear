@@ -26,9 +26,19 @@ docker compose up --build
 - **min_rows**：上游产出摘要 `artifact_rows` 不得低于该值（拦 0 行空成功）。
 - **required_field**：上游尝试详情（产出摘要）里该字段必须存在且非 null（如 `watermark_ts`）。
 
-契约不过 → 下游不执行，尝试记为 `skipped_contract`（detail 含 `violations`，写明哪条不过），
-且该下游不抬自己的水位；报告计数由尝试记录汇总得出，success / failed / skipped_dep /
-skipped_contract 与尝试列表一一对得上。
+契约不过 → 下游不执行（夹具不跑），尝试记为 `skipped_contract`（detail 含 `violations`、
+`executed=false`、`watermark_advanced=false` 与 `reason`，写明哪条不过），
+且该下游不抬自己的水位、也不会被更下游当成可信上游（更下游记 `skipped_dep`）；
+契约通过则尝试 detail 带 `contract_verdict=passed` 与核验过的上游列表。
+报告计数直接由尝试记录汇总得出，success / failed / skipped_dep / skipped_contract 与尝试列表
+一一对得上，并由报告里的 `reconciliation` 与 `contract_checks` 逐项互证（尝试计数、契约跳过数、
+跳过合计、拦截作业未被信任、拦截作业水位未动、已执行水位与尝试一致）。
+
+契约核验规则（任一不满足即不通过，绝不当作空成功放行）：
+
+- 上游必须在本轮有可核验的产出摘要；缺失摘要记 `upstream_summary` 违规。
+- 摘要必须有整数 `artifact_rows`；缺失记 `min_rows` 违规，0 行在 `min_rows>=1` 时同样违规。
+- `required_field` 存在但为 null 同样违规。
 
 接口：
 
